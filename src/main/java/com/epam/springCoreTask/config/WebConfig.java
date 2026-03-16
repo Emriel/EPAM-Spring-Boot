@@ -16,11 +16,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // Add logging interceptor for all requests
         registry.addInterceptor(loggingInterceptor)
                 .addPathPatterns("/**");
         
-        // Add authentication interceptor for all requests except registration
         registry.addInterceptor(authenticationInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
@@ -28,7 +26,8 @@ public class WebConfig implements WebMvcConfigurer {
                     "/api/trainers/register",
                     "/api/training-types",
                     "/swagger-ui/**",
-                    "/v3/api-docs/**"
+                    "/v3/api-docs/**",
+                    "/actuator/**"
                 );
     }
 }

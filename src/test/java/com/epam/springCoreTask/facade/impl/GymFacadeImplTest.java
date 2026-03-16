@@ -39,6 +39,7 @@ import com.epam.springCoreTask.service.TraineeService;
 import com.epam.springCoreTask.service.TrainerService;
 import com.epam.springCoreTask.service.TrainingService;
 import com.epam.springCoreTask.service.UserService;
+import com.epam.springCoreTask.monitoring.GymMetricsService;
 
 @ExtendWith(MockitoExtension.class)
 class GymFacadeImplTest {
@@ -66,6 +67,9 @@ class GymFacadeImplTest {
 
     @Mock
     private TrainingTypeRepository trainingTypeRepository;
+
+    @Mock
+    private GymMetricsService gymMetricsService;
 
     @InjectMocks
     private GymFacadeImpl gymFacade;

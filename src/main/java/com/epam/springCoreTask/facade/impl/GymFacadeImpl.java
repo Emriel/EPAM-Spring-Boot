@@ -29,6 +29,7 @@ import com.epam.springCoreTask.service.TraineeService;
 import com.epam.springCoreTask.service.TrainerService;
 import com.epam.springCoreTask.service.TrainingService;
 import com.epam.springCoreTask.service.UserService;
+import com.epam.springCoreTask.monitoring.GymMetricsService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,7 @@ public class GymFacadeImpl implements GymFacade {
     private final TrainerMapper trainerMapper;
     private final TrainingMapper trainingMapper;
     private final TrainingTypeRepository trainingTypeRepository;
+    private final GymMetricsService gymMetricsService;
 
     @Override
     public RegistrationResponse createTraineeProfile(TraineeRegistrationRequest request) {
@@ -57,7 +59,8 @@ public class GymFacadeImpl implements GymFacade {
             request.getDateOfBirth(),
             request.getAddress()
         );
-        
+
+        gymMetricsService.incrementTraineeRegistrations();
         return new RegistrationResponse(trainee.getUser().getUsername(), trainee.getUser().getPassword());
     }
 
@@ -70,7 +73,8 @@ public class GymFacadeImpl implements GymFacade {
             request.getLastName(),
             request.getSpecialization()
         );
-        
+
+        gymMetricsService.incrementTrainerRegistrations();
         return new RegistrationResponse(trainer.getUser().getUsername(), trainer.getUser().getPassword());
     }
 
@@ -90,6 +94,7 @@ public class GymFacadeImpl implements GymFacade {
             request.getTrainingDate(),
             request.getTrainingDuration()
         );
+        gymMetricsService.incrementTrainingSessions();
     }
 
     @Override
@@ -208,7 +213,14 @@ public class GymFacadeImpl implements GymFacade {
     @Override
     public User authenticateUser(String username, String password) {
         log.info("Authenticating user through facade: username={}", username);
-        return userService.authenticateUser(username, password);
+        try {
+            User user = userService.authenticateUser(username, password);
+            gymMetricsService.incrementLoginSuccess();
+            return user;
+        } catch (Exception e) {
+            gymMetricsService.incrementLoginFailure();
+            throw e;
+        }
     }
 
     @Override
