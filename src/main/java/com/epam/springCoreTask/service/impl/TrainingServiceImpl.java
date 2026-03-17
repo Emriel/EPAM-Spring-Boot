@@ -29,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class TrainingServiceImpl implements TrainingService {
 
@@ -40,6 +39,7 @@ private final TrainingTypeRepository trainingTypeRepository;
 private final ValidationUtil validationUtil;
 
 @Override
+@Transactional
 public Training createTraining(Long traineeId, Long trainerId, String trainingName,
                 TrainingType trainingType, LocalDate trainingDate, int trainingDuration) {
         log.debug("Creating training: name={}, traineeId={}, trainerId={}, date={}, duration={}",

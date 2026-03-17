@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class TrainerServiceImpl implements TrainerService {
 
@@ -36,6 +35,7 @@ public class TrainerServiceImpl implements TrainerService {
     private final ValidationUtil validationUtil;
 
     @Override
+    @Transactional
     public Trainer createTrainer(String firstName, String lastName, String specialization) {
         log.debug("Creating trainer: {} {}, specialization: {}", firstName, lastName, specialization);
 
@@ -72,6 +72,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public Trainer updateTrainer(Trainer trainer) {
         log.debug("Updating trainer: id={}, username={}", trainer.getId(), trainer.getUser().getUsername());
 
@@ -131,6 +132,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public void changeTrainerPassword(String username, String oldPassword, String newPassword) {
         userService.changePassword(
                 username,
@@ -143,6 +145,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public void activateTrainer(String username) {
         userService.activateEntity(
                 username,
@@ -153,6 +156,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public void deactivateTrainer(String username) {
         userService.deactivateEntity(
                 username,

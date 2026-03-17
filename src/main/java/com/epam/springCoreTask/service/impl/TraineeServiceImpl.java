@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class TraineeServiceImpl implements TraineeService {
 
@@ -35,6 +34,7 @@ public class TraineeServiceImpl implements TraineeService {
     private final ValidationUtil validationUtil;
 
     @Override
+    @Transactional
     public Trainee createTrainee(String firstName, String lastName, java.time.LocalDate dateOfBirth, String address) {
         log.debug("Creating trainee: {} {}, dateOfBirth: {}, address: {}", firstName, lastName, dateOfBirth, address);
 
@@ -71,6 +71,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public Trainee updateTrainee(Trainee trainee) {
         log.debug("Updating trainee: id={}, username={}", trainee.getId(), trainee.getUser().getUsername());
 
@@ -96,6 +97,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void deleteTrainee(Trainee trainee) {
         log.debug("Deleting trainee: id={}, username={}", trainee.getId(), trainee.getUser().getUsername());
 
@@ -142,6 +144,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void changeTraineePassword(String username, String oldPassword, String newPassword) {
         userService.changePassword(
                 username,
@@ -154,6 +157,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void activateTrainee(String username) {
         userService.activateEntity(
                 username,
@@ -164,6 +168,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void deactivateTrainee(String username) {
         userService.deactivateEntity(
                 username,
@@ -174,6 +179,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void deleteTraineeByUsername(String username) {
         log.debug("Deleting trainee by username: {}", username);
 
@@ -184,6 +190,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Transactional
     public void updateTraineeTrainersList(String traineeUsername, List<String> trainerUsernames) {
         log.debug("Updating trainers list for trainee: traineeUsername={}, trainerUsernames={}",
                 traineeUsername, trainerUsernames);
