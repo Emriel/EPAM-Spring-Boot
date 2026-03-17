@@ -32,13 +32,9 @@ public interface GymFacade {
 
         TrainerProfileResponse getTrainerByUsername(String username);
 
-        void activateTrainee(String username);
+        void changeTraineeStatus(String username, boolean isActive);
 
-        void deactivateTrainee(String username);
-
-        void activateTrainer(String username);
-
-        void deactivateTrainer(String username);
+        void changeTrainerStatus(String username, boolean isActive);
 
         void deleteTraineeByUsername(String username);
 

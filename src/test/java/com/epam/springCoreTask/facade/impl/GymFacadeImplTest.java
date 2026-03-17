@@ -330,51 +330,27 @@ class GymFacadeImplTest {
     }
 
     @Test
-    void testActivateTrainee() {
+    void testChangeTraineeStatus() {
         // Arrange
         String username = "john.doe";
 
         // Act
-        gymFacade.activateTrainee(username);
+        gymFacade.changeTraineeStatus(username, true);
 
         // Assert
-        verify(traineeService).activateTrainee(username);
+        verify(userService).setActiveStatus(username, true);
     }
 
     @Test
-    void testDeactivateTrainee() {
-        // Arrange
-        String username = "john.doe";
-
-        // Act
-        gymFacade.deactivateTrainee(username);
-
-        // Assert
-        verify(traineeService).deactivateTrainee(username);
-    }
-
-    @Test
-    void testActivateTrainer() {
+    void testChangeTrainerStatus() {
         // Arrange
         String username = "jane.smith";
 
         // Act
-        gymFacade.activateTrainer(username);
+        gymFacade.changeTrainerStatus(username, false);
 
         // Assert
-        verify(trainerService).activateTrainer(username);
-    }
-
-    @Test
-    void testDeactivateTrainer() {
-        // Arrange
-        String username = "jane.smith";
-
-        // Act
-        gymFacade.deactivateTrainer(username);
-
-        // Assert
-        verify(trainerService).deactivateTrainer(username);
+        verify(userService).setActiveStatus(username, false);
     }
 
     @Test

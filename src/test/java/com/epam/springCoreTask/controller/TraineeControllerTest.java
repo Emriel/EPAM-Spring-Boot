@@ -192,7 +192,7 @@ class TraineeControllerTest {
 
     @Test
     void testChangeTraineeStatus_Activate_Success() throws Exception {
-        doNothing().when(gymFacade).activateTrainee("john.doe");
+        doNothing().when(gymFacade).changeTraineeStatus("john.doe", true);
 
         String requestBody = "{\n" +
                 "  \"username\": \"john.doe\",\n" +
@@ -206,12 +206,12 @@ class TraineeControllerTest {
                 .header("Password", "password123"))
                 .andExpect(status().isOk());
 
-        verify(gymFacade).activateTrainee("john.doe");
+        verify(gymFacade).changeTraineeStatus("john.doe", true);
     }
 
     @Test
     void testChangeTraineeStatus_Deactivate_Success() throws Exception {
-        doNothing().when(gymFacade).deactivateTrainee("john.doe");
+        doNothing().when(gymFacade).changeTraineeStatus("john.doe", false);
 
         String requestBody = "{\n" +
                 "  \"username\": \"john.doe\",\n" +
@@ -225,7 +225,7 @@ class TraineeControllerTest {
                 .header("Password", "password123"))
                 .andExpect(status().isOk());
 
-        verify(gymFacade).deactivateTrainee("john.doe");
+        verify(gymFacade).changeTraineeStatus("john.doe", false);
     }
 
     @Test

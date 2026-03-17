@@ -118,11 +118,7 @@ public class TrainerController {
             @Valid @RequestBody ActivationRequest request) {
         log.info("Changing status for trainer: {} to {}", username, request.getIsActive());
         
-        if (request.getIsActive()) {
-            gymFacade.activateTrainer(username);
-        } else {
-            gymFacade.deactivateTrainer(username);
-        }
+        gymFacade.changeTrainerStatus(username, request.getIsActive());
         
         log.info("Status changed for trainer: {}", username);
         return ResponseEntity.ok().build();

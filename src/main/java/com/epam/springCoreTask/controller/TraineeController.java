@@ -138,11 +138,7 @@ public class TraineeController {
             @Valid @RequestBody ActivationRequest request) {
         log.info("Changing status for trainee: {} to {}", username, request.getIsActive());
         
-        if (request.getIsActive()) {
-            gymFacade.activateTrainee(username);
-        } else {
-            gymFacade.deactivateTrainee(username);
-        }
+        gymFacade.changeTraineeStatus(username, request.getIsActive());
         
         log.info("Status changed for trainee: {}", username);
         return ResponseEntity.ok().build();

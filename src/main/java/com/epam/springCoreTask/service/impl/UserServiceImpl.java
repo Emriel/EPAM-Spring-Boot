@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.epam.springCoreTask.dto.AuthenticationDTO;
 import com.epam.springCoreTask.exception.AuthenticationException;
+import com.epam.springCoreTask.exception.EntityNotFoundException;
 import com.epam.springCoreTask.exception.ValidationException;
 import com.epam.springCoreTask.model.User;
 import com.epam.springCoreTask.repository.UserRepository;
@@ -171,5 +172,20 @@ public class UserServiceImpl implements UserService {
                 userRepository.save(user);
 
                 log.info("Password changed successfully for user: username={}", username);
+        }
+
+        @Override
+        public void setActiveStatus(String username, boolean isActive) {
+                log.debug("Setting active status for user: username={}, isActive={}", username, isActive);
+
+                validationUtil.validateNotBlank(username, "Username");
+
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+
+                user.setActive(isActive);
+                userRepository.save(user);
+
+                log.info("Active status set to {} for user: username={}", isActive, username);
         }
 }

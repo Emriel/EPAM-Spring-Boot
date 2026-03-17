@@ -139,27 +139,15 @@ public class GymFacadeImpl implements GymFacade {
     }
 
     @Override
-    public void activateTrainee(String username) {
-        log.info("Activating trainee through facade: username={}", username);
-        traineeService.activateTrainee(username);
+    public void changeTraineeStatus(String username, boolean isActive) {
+        log.info("Changing trainee status through facade: username={}, isActive={}", username, isActive);
+        userService.setActiveStatus(username, isActive);
     }
 
     @Override
-    public void deactivateTrainee(String username) {
-        log.info("Deactivating trainee through facade: username={}", username);
-        traineeService.deactivateTrainee(username);
-    }
-
-    @Override
-    public void activateTrainer(String username) {
-        log.info("Activating trainer through facade: username={}", username);
-        trainerService.activateTrainer(username);
-    }
-
-    @Override
-    public void deactivateTrainer(String username) {
-        log.info("Deactivating trainer through facade: username={}", username);
-        trainerService.deactivateTrainer(username);
+    public void changeTrainerStatus(String username, boolean isActive) {
+        log.info("Changing trainer status through facade: username={}, isActive={}", username, isActive);
+        userService.setActiveStatus(username, isActive);
     }
 
     @Override

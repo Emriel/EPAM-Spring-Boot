@@ -35,4 +35,6 @@ public interface UserService {
         User authenticateUser(String username, String password);
 
         void changeUserPassword(String username, String oldPassword, String newPassword);
+
+        void setActiveStatus(String username, boolean isActive);
 }
