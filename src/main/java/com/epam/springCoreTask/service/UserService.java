@@ -4,17 +4,17 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.epam.springCoreTask.dto.AuthenticationDTO;
 import com.epam.springCoreTask.model.User;
 
 public interface UserService {
 
         <T> T authenticate(String username, String password,
-                        Function<AuthenticationDTO, Optional<T>> repositoryFinder,
+                                Function<String, Optional<T>> entityFinder,
+                                Function<T, User> userGetter,
                         String entityType);
 
         <T> void changePassword(String username, String oldPassword, String newPassword,
-                        Function<AuthenticationDTO, Optional<T>> authFinder,
+                                Function<String, Optional<T>> entityFinder,
                         Function<T, User> userGetter,
                         Consumer<T> saver,
                         String entityType);
@@ -37,4 +37,6 @@ public interface UserService {
         void changeUserPassword(String username, String oldPassword, String newPassword);
 
         void setActiveStatus(String username, boolean isActive);
+
+                User getUserByUsername(String username);
 }

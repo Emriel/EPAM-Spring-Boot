@@ -40,6 +40,7 @@ import com.epam.springCoreTask.service.TrainerService;
 import com.epam.springCoreTask.service.TrainingService;
 import com.epam.springCoreTask.service.UserService;
 import com.epam.springCoreTask.monitoring.GymMetricsService;
+import com.epam.springCoreTask.security.JwtService;
 
 @ExtendWith(MockitoExtension.class)
 class GymFacadeImplTest {
@@ -71,6 +72,9 @@ class GymFacadeImplTest {
     @Mock
     private GymMetricsService gymMetricsService;
 
+    @Mock
+    private JwtService jwtService;
+
     @InjectMocks
     private GymFacadeImpl gymFacade;
 
@@ -87,12 +91,14 @@ class GymFacadeImplTest {
         User traineeUser = new User();
         traineeUser.setUsername("john.doe");
         traineeUser.setPassword("password123");
+        traineeUser.setPlainPassword("password123");
         traineeUser.setFirstName("John");
         traineeUser.setLastName("Doe");
 
         User trainerUser = new User();
         trainerUser.setUsername("jane.smith");
         trainerUser.setPassword("password123");
+        trainerUser.setPlainPassword("password123");
         trainerUser.setFirstName("Jane");
         trainerUser.setLastName("Smith");
 
@@ -138,6 +144,7 @@ class GymFacadeImplTest {
 
         when(traineeService.createTrainee("John", "Doe", LocalDate.of(1990, 1, 1), "123 Main St"))
                 .thenReturn(testTrainee);
+        when(jwtService.generateToken("john.doe")).thenReturn("jwt-token");
 
         // Act
         RegistrationResponse result = gymFacade.createTraineeProfile(request);
@@ -146,6 +153,7 @@ class GymFacadeImplTest {
         assertNotNull(result);
         assertEquals("john.doe", result.getUsername());
         assertEquals("password123", result.getPassword());
+        assertEquals("jwt-token", result.getAccessToken());
         verify(traineeService).createTrainee("John", "Doe", LocalDate.of(1990, 1, 1), "123 Main St");
     }
 
@@ -155,6 +163,7 @@ class GymFacadeImplTest {
         TrainerRegistrationRequest request = new TrainerRegistrationRequest("Jane", "Smith", "Yoga");
 
         when(trainerService.createTrainer("Jane", "Smith", "Yoga")).thenReturn(testTrainer);
+        when(jwtService.generateToken("jane.smith")).thenReturn("jwt-token");
 
         // Act
         RegistrationResponse result = gymFacade.createTrainerProfile(request);
@@ -163,6 +172,7 @@ class GymFacadeImplTest {
         assertNotNull(result);
         assertEquals("jane.smith", result.getUsername());
         assertEquals("password123", result.getPassword());
+        assertEquals("jwt-token", result.getAccessToken());
         verify(trainerService).createTrainer("Jane", "Smith", "Yoga");
     }
 

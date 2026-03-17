@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.epam.springCoreTask.exception.EntityNotFoundException;
 import com.epam.springCoreTask.model.Trainer;
@@ -44,6 +45,9 @@ class TrainerServiceImplTest {
 
     @Mock
     private PasswordGenerator passwordGenerator;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @Mock
     private UserService userService;
@@ -93,6 +97,7 @@ class TrainerServiceImplTest {
                     return "jane.smith";
                 });
         when(passwordGenerator.generatePassword()).thenReturn("password123");
+        when(passwordEncoder.encode("password123")).thenReturn("encoded-password123");
         when(trainingTypeRepository.findByName(specialization)).thenReturn(Optional.of(testTrainingType));
         when(trainerRepository.save(any(Trainer.class))).thenReturn(testTrainer);
 
@@ -226,7 +231,7 @@ class TrainerServiceImplTest {
         // Arrange
         String username = "jane.smith";
         String password = "password123";
-        when(userService.authenticate(eq(username), eq(password), any(), eq("trainer"))).thenReturn(testTrainer);
+        when(userService.authenticate(eq(username), eq(password), any(), any(), eq("trainer"))).thenReturn(testTrainer);
 
         // Act
         Trainer result = trainerService.authenticateTrainer(username, password);
@@ -234,7 +239,7 @@ class TrainerServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(testTrainer, result);
-        verify(userService).authenticate(eq(username), eq(password), any(), eq("trainer"));
+        verify(userService).authenticate(eq(username), eq(password), any(), any(), eq("trainer"));
     }
 
     @Test

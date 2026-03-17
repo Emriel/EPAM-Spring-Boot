@@ -3,6 +3,7 @@ package com.epam.springCoreTask.service.impl;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.epam.springCoreTask.exception.EntityNotFoundException;
@@ -31,6 +32,7 @@ public class TrainerServiceImpl implements TrainerService {
     private final TrainingTypeRepository trainingTypeRepository;
     private final UsernameGenerator usernameGenerator;
     private final PasswordGenerator passwordGenerator;
+    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
     private final ValidationUtil validationUtil;
 
@@ -57,8 +59,10 @@ public class TrainerServiceImpl implements TrainerService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(password));
         user.setActive(true);
+        user.setFailedLoginAttempts(0);
+        user.setPlainPassword(password);
 
         Trainer trainer = new Trainer();
         trainer.setUser(user);
@@ -113,12 +117,13 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Trainer authenticateTrainer(String username, String password) {
         return userService.authenticate(
                 username,
                 password,
-                trainerRepository::findByUsernameAndPassword,
+				trainerRepository::findByUser_Username,
+				Trainer::getUser,
                 "trainer");
     }
 
@@ -138,7 +143,7 @@ public class TrainerServiceImpl implements TrainerService {
                 username,
                 oldPassword,
                 newPassword,
-                trainerRepository::findByUsernameAndPassword,
+				trainerRepository::findByUser_Username,
                 Trainer::getUser,
                 trainerRepository::save,
                 "trainer");

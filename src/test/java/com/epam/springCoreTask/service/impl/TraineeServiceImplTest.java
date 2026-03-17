@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.epam.springCoreTask.exception.DuplicateAssignmentException;
 import com.epam.springCoreTask.exception.EntityNotFoundException;
@@ -43,6 +44,9 @@ class TraineeServiceImplTest {
 
     @Mock
     private PasswordGenerator passwordGenerator;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @Mock
     private UserService userService;
@@ -88,6 +92,7 @@ class TraineeServiceImplTest {
                     return "john.doe";
                 });
         when(passwordGenerator.generatePassword()).thenReturn("password123");
+        when(passwordEncoder.encode("password123")).thenReturn("encoded-password123");
         when(traineeRepository.save(any(Trainee.class))).thenReturn(testTrainee);
 
         // Act
@@ -141,6 +146,7 @@ class TraineeServiceImplTest {
                     return "john.doe";
                 });
         when(passwordGenerator.generatePassword()).thenReturn("password123");
+        when(passwordEncoder.encode("password123")).thenReturn("encoded-password123");
         when(traineeRepository.save(any(Trainee.class))).thenReturn(testTrainee);
 
         // Act
@@ -249,7 +255,7 @@ class TraineeServiceImplTest {
         // Arrange
         String username = "john.doe";
         String password = "password123";
-        when(userService.authenticate(eq(username), eq(password), any(), eq("trainee"))).thenReturn(testTrainee);
+        when(userService.authenticate(eq(username), eq(password), any(), any(), eq("trainee"))).thenReturn(testTrainee);
 
         // Act
         Trainee result = traineeService.authenticateTrainee(username, password);
@@ -257,7 +263,7 @@ class TraineeServiceImplTest {
         // Assert
         assertNotNull(result);
         assertEquals(testTrainee, result);
-        verify(userService).authenticate(eq(username), eq(password), any(), eq("trainee"));
+        verify(userService).authenticate(eq(username), eq(password), any(), any(), eq("trainee"));
     }
 
     @Test

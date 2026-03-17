@@ -16,4 +16,23 @@ public class RegistrationResponse {
 
     @Schema(description = "Generated password", example = "aBc123XyZ")
     private String password;
+
+    @Schema(description = "JWT bearer token", example = "eyJhbGciOiJIUzI1NiJ9...")
+    private String accessToken;
+
+    @Schema(description = "Token type", example = "Bearer")
+    private String tokenType;
+
+    public RegistrationResponse(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.tokenType = "Bearer";
+    }
+
+    public RegistrationResponse(String username, String password, String accessToken) {
+        this.username = username;
+        this.password = password;
+        this.accessToken = accessToken;
+        this.tokenType = "Bearer";
+    }
 }

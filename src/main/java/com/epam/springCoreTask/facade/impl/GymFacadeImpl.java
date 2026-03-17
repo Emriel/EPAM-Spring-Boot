@@ -30,6 +30,7 @@ import com.epam.springCoreTask.service.TrainerService;
 import com.epam.springCoreTask.service.TrainingService;
 import com.epam.springCoreTask.service.UserService;
 import com.epam.springCoreTask.monitoring.GymMetricsService;
+import com.epam.springCoreTask.security.JwtService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +49,7 @@ public class GymFacadeImpl implements GymFacade {
     private final TrainingMapper trainingMapper;
     private final TrainingTypeRepository trainingTypeRepository;
     private final GymMetricsService gymMetricsService;
+    private final JwtService jwtService;
 
     @Override
     public RegistrationResponse createTraineeProfile(TraineeRegistrationRequest request) {
@@ -61,7 +63,11 @@ public class GymFacadeImpl implements GymFacade {
         );
 
         gymMetricsService.incrementTraineeRegistrations();
-        return new RegistrationResponse(trainee.getUser().getUsername(), trainee.getUser().getPassword());
+        return new RegistrationResponse(
+            trainee.getUser().getUsername(),
+            requestGeneratedPassword(trainee),
+            jwtService.generateToken(trainee.getUser().getUsername())
+        );
     }
 
     @Override
@@ -75,7 +81,11 @@ public class GymFacadeImpl implements GymFacade {
         );
 
         gymMetricsService.incrementTrainerRegistrations();
-        return new RegistrationResponse(trainer.getUser().getUsername(), trainer.getUser().getPassword());
+        return new RegistrationResponse(
+            trainer.getUser().getUsername(),
+            requestGeneratedPassword(trainer),
+            jwtService.generateToken(trainer.getUser().getUsername())
+        );
     }
 
     @Override
@@ -215,6 +225,14 @@ public class GymFacadeImpl implements GymFacade {
     public void changeUserPassword(String username, String oldPassword, String newPassword) {
         log.info("Changing user password through facade: username={}", username);
         userService.changeUserPassword(username, oldPassword, newPassword);
+    }
+
+    private String requestGeneratedPassword(Trainee trainee) {
+        return trainee.getUser().getPlainPassword();
+    }
+
+    private String requestGeneratedPassword(Trainer trainer) {
+        return trainer.getUser().getPlainPassword();
     }
 
     @Override

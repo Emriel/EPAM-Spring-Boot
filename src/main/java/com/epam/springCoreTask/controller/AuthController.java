@@ -1,17 +1,22 @@
 package com.epam.springCoreTask.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.epam.springCoreTask.dto.request.ChangePasswordRequest;
+import com.epam.springCoreTask.dto.request.LoginRequest;
+import com.epam.springCoreTask.dto.response.LoginResponse;
 import com.epam.springCoreTask.facade.GymFacade;
+import com.epam.springCoreTask.model.User;
+import com.epam.springCoreTask.security.JwtService;
+import com.epam.springCoreTask.security.TokenBlacklistService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,18 +25,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/auth")
 @Validated
 @Slf4j
+@RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Authentication management endpoints")
 public class AuthController {
 
-    @Autowired
-    private GymFacade gymFacade;
+    private final GymFacade gymFacade;
+    private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Operation(summary = "User login", description = "Authenticate user with username and password")
     @ApiResponses(value = {
@@ -39,15 +48,15 @@ public class AuthController {
         @ApiResponse(responseCode = "401", description = "Invalid credentials", 
                      content = @Content(schema = @Schema(implementation = String.class)))
     })
-    @GetMapping("/login")
-    public ResponseEntity<Void> login(
-            @Parameter(description = "Username", required = true) @RequestParam String username,
-            @Parameter(description = "Password", required = true) @RequestParam String password) {
-        log.info("Login attempt for user: {}", username);
-        
-        gymFacade.authenticateUser(username, password);
-        log.info("User login successful: {}", username);
-        return ResponseEntity.ok().build();
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        log.info("Login attempt for user: {}", request.getUsername());
+
+        User user = gymFacade.authenticateUser(request.getUsername(), request.getPassword());
+        String accessToken = jwtService.generateToken(user.getUsername());
+
+        log.info("User login successful: {}", request.getUsername());
+        return ResponseEntity.ok(new LoginResponse(user.getUsername(), accessToken));
     }
 
     @Operation(summary = "Change password", description = "Change user password")
@@ -66,6 +75,23 @@ public class AuthController {
                                      request.getOldPassword(), 
                                      request.getNewPassword());
         log.info("User password changed successfully: {}", request.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "User logout", description = "Invalidate the current JWT token")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Logout successful"),
+        @ApiResponse(responseCode = "401", description = "Authentication required")
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, Authentication authentication) {
+        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7);
+            tokenBlacklistService.blacklist(token, jwtService.extractExpiration(token));
+        }
+
+        log.info("User logout successful: {}", authentication != null ? authentication.getName() : "unknown");
         return ResponseEntity.ok().build();
     }
 }

@@ -24,16 +24,11 @@ public class SwaggerConfig {
                                 .name("EPAM Systems")
                                 .email("support@epam.com")))
                 .components(new Components()
-                        .addSecuritySchemes("username", new SecurityScheme()
-                                .type(SecurityScheme.Type.APIKEY)
-                                .in(SecurityScheme.In.HEADER)
-                                .name("Username"))
-                        .addSecuritySchemes("password", new SecurityScheme()
-                                .type(SecurityScheme.Type.APIKEY)
-                                .in(SecurityScheme.In.HEADER)
-                                .name("Password")))
+                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement()
-                        .addList("username")
-                        .addList("password"));
+                        .addList("bearerAuth"));
     }
 }

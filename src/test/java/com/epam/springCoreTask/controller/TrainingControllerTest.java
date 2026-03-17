@@ -14,20 +14,25 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.epam.springCoreTask.config.AuthenticationInterceptor;
 import com.epam.springCoreTask.config.LoggingInterceptor;
 import com.epam.springCoreTask.dto.request.TrainingRequest;
 import com.epam.springCoreTask.facade.GymFacade;
 import com.epam.springCoreTask.model.TrainingType;
 import com.epam.springCoreTask.repository.TrainingTypeRepository;
+import com.epam.springCoreTask.security.GymUserDetailsService;
+import com.epam.springCoreTask.security.JwtAuthenticationFilter;
+import com.epam.springCoreTask.security.JwtService;
+import com.epam.springCoreTask.security.TokenBlacklistService;
 
 @WebMvcTest(TrainingController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class TrainingControllerTest {
 
     @Autowired
@@ -36,11 +41,20 @@ class TrainingControllerTest {
     @MockBean
     private GymFacade gymFacade;
 
-    @MockBean
-    private TrainingTypeRepository trainingTypeRepository;
+        @MockBean
+        private JwtService jwtService;
+
+        @MockBean
+        private TokenBlacklistService tokenBlacklistService;
+
+        @MockBean
+        private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+        @MockBean
+        private GymUserDetailsService gymUserDetailsService;
 
     @MockBean
-    private AuthenticationInterceptor authenticationInterceptor;
+    private TrainingTypeRepository trainingTypeRepository;
 
     @MockBean
     private LoggingInterceptor loggingInterceptor;
@@ -50,7 +64,6 @@ class TrainingControllerTest {
     @BeforeEach
     void setUp() throws Exception {
         when(loggingInterceptor.preHandle(any(), any(), any())).thenReturn(true);
-        when(authenticationInterceptor.preHandle(any(), any(), any())).thenReturn(true);
 
         trainingType = new TrainingType(1L, "Fitness");
     }

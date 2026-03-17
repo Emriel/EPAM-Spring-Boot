@@ -5,27 +5,33 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.epam.springCoreTask.config.AuthenticationInterceptor;
 import com.epam.springCoreTask.config.LoggingInterceptor;
 import com.epam.springCoreTask.exception.AuthenticationException;
 import com.epam.springCoreTask.facade.GymFacade;
+import com.epam.springCoreTask.security.GymUserDetailsService;
+import com.epam.springCoreTask.security.JwtAuthenticationFilter;
 import com.epam.springCoreTask.model.Trainee;
 import com.epam.springCoreTask.model.Trainer;
 import com.epam.springCoreTask.model.User;
+import com.epam.springCoreTask.security.JwtService;
+import com.epam.springCoreTask.security.TokenBlacklistService;
 
 @WebMvcTest(AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
     @Autowired
@@ -35,7 +41,16 @@ class AuthControllerTest {
     private GymFacade gymFacade;
 
     @MockBean
-    private AuthenticationInterceptor authenticationInterceptor;
+        private JwtService jwtService;
+
+        @MockBean
+        private TokenBlacklistService tokenBlacklistService;
+
+        @MockBean
+        private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+        @MockBean
+        private GymUserDetailsService gymUserDetailsService;
 
     @MockBean
     private LoggingInterceptor loggingInterceptor;
@@ -46,7 +61,6 @@ class AuthControllerTest {
     @BeforeEach
     void setUp() throws Exception {
         when(loggingInterceptor.preHandle(any(), any(), any())).thenReturn(true);
-        when(authenticationInterceptor.preHandle(any(), any(), any())).thenReturn(true);
         
         User traineeUser = new User(1L, "John", "Doe", "john.doe", "password123", true);
         trainee = new Trainee();
@@ -61,11 +75,17 @@ class AuthControllerTest {
     void testLogin_AsTrainee_Success() throws Exception {
         User user = new User(1L, "John", "Doe", "john.doe", "password123", true);
         when(gymFacade.authenticateUser("john.doe", "password123")).thenReturn(user);
+        when(jwtService.generateToken("john.doe")).thenReturn("jwt-token");
 
-        mockMvc.perform(get("/api/auth/login")
-                .param("username", "john.doe")
-                .param("password", "password123"))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                        "\"username\":\"john.doe\"," +
+                        "\"password\":\"password123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("john.doe"))
+                .andExpect(jsonPath("$.accessToken").value("jwt-token"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"));
 
         verify(gymFacade).authenticateUser("john.doe", "password123");
     }
@@ -74,11 +94,16 @@ class AuthControllerTest {
     void testLogin_AsTrainer_Success() throws Exception {
         User user = new User(2L, "Jane", "Smith", "jane.smith", "password123", true);
         when(gymFacade.authenticateUser("jane.smith", "password123")).thenReturn(user);
+        when(jwtService.generateToken("jane.smith")).thenReturn("jwt-token");
 
-        mockMvc.perform(get("/api/auth/login")
-                .param("username", "jane.smith")
-                .param("password", "password123"))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                        "\"username\":\"jane.smith\"," +
+                        "\"password\":\"password123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("jane.smith"))
+                .andExpect(jsonPath("$.accessToken").value("jwt-token"));
 
         verify(gymFacade).authenticateUser("jane.smith", "password123");
     }
@@ -88,16 +113,19 @@ class AuthControllerTest {
         when(gymFacade.authenticateUser("invalid", "wrong"))
                 .thenThrow(new AuthenticationException("Invalid username or password"));
 
-        mockMvc.perform(get("/api/auth/login")
-                .param("username", "invalid")
-                .param("password", "wrong"))
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                        "\"username\":\"invalid\"," +
+                        "\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void testLogin_MissingUsername_BadRequest() throws Exception {
-        mockMvc.perform(get("/api/auth/login")
-                .param("password", "password123"))
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"password123\"}"))
                 .andExpect(status().isBadRequest());
     }
 

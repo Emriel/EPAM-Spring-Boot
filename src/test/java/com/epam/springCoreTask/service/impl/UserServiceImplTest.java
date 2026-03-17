@@ -10,15 +10,15 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.epam.springCoreTask.dto.AuthenticationDTO;
 import com.epam.springCoreTask.exception.AuthenticationException;
 import com.epam.springCoreTask.exception.ValidationException;
-import com.epam.springCoreTask.model.User;
 import com.epam.springCoreTask.model.Trainee;
+import com.epam.springCoreTask.model.User;
 import com.epam.springCoreTask.repository.UserRepository;
 import com.epam.springCoreTask.util.ValidationUtil;
 
@@ -31,6 +31,9 @@ class UserServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -41,20 +44,31 @@ class UserServiceImplTest {
         String password = "password123";
         Trainee expectedTrainee = new Trainee();
         expectedTrainee.setId(1L);
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword("encoded-password");
+        user.setActive(true);
+        expectedTrainee.setUser(user);
 
         @SuppressWarnings("unchecked")
-        Function<AuthenticationDTO, Optional<Trainee>> repositoryFinder = mock(Function.class);
-        when(repositoryFinder.apply(any(AuthenticationDTO.class))).thenReturn(Optional.of(expectedTrainee));
+        Function<String, Optional<Trainee>> entityFinder = mock(Function.class);
+        when(entityFinder.apply(username)).thenReturn(Optional.of(expectedTrainee));
+
+        @SuppressWarnings("unchecked")
+        Function<Trainee, User> userGetter = mock(Function.class);
+        when(userGetter.apply(expectedTrainee)).thenReturn(user);
+        when(passwordEncoder.matches(password, "encoded-password")).thenReturn(true);
 
         // Act
-        Trainee result = userService.authenticate(username, password, repositoryFinder, "trainee");
+        Trainee result = userService.authenticate(username, password, entityFinder, userGetter, "trainee");
 
         // Assert
         assertNotNull(result);
         assertEquals(expectedTrainee, result);
         verify(validationUtil).validateNotBlank(username, "Username");
         verify(validationUtil).validateNotBlank(password, "Password");
-        verify(repositoryFinder).apply(any(AuthenticationDTO.class));
+        verify(entityFinder).apply(username);
+        verify(userGetter).apply(expectedTrainee);
     }
 
     @Test
@@ -64,12 +78,15 @@ class UserServiceImplTest {
         String password = "wrongpassword";
 
         @SuppressWarnings("unchecked")
-        Function<AuthenticationDTO, Optional<Trainee>> repositoryFinder = mock(Function.class);
-        when(repositoryFinder.apply(any(AuthenticationDTO.class))).thenReturn(Optional.empty());
+        Function<String, Optional<Trainee>> entityFinder = mock(Function.class);
+        when(entityFinder.apply(username)).thenReturn(Optional.empty());
+
+        @SuppressWarnings("unchecked")
+        Function<Trainee, User> userGetter = mock(Function.class);
 
         // Act & Assert
         AuthenticationException exception = assertThrows(AuthenticationException.class,
-                () -> userService.authenticate(username, password, repositoryFinder, "trainee"));
+            () -> userService.authenticate(username, password, entityFinder, userGetter, "trainee"));
 
         assertEquals("Invalid username or password", exception.getMessage());
         verify(validationUtil).validateNotBlank(username, "Username");
@@ -83,11 +100,14 @@ class UserServiceImplTest {
                 .when(validationUtil).validateNotBlank(null, "Username");
 
         @SuppressWarnings("unchecked")
-        Function<AuthenticationDTO, Optional<Trainee>> repositoryFinder = mock(Function.class);
+        Function<String, Optional<Trainee>> entityFinder = mock(Function.class);
+
+        @SuppressWarnings("unchecked")
+        Function<Trainee, User> userGetter = mock(Function.class);
 
         // Act & Assert
         assertThrows(ValidationException.class,
-                () -> userService.authenticate(null, "password", repositoryFinder, "trainee"));
+            () -> userService.authenticate(null, "password", entityFinder, userGetter, "trainee"));
     }
 
     @Test
@@ -99,15 +119,16 @@ class UserServiceImplTest {
 
         User user = new User();
         user.setUsername(username);
-        user.setPassword(oldPassword);
+        user.setPassword("encoded-old-password");
+        user.setActive(true);
 
         Trainee trainee = new Trainee();
         trainee.setId(1L);
         trainee.setUser(user);
 
         @SuppressWarnings("unchecked")
-        Function<AuthenticationDTO, Optional<Trainee>> authFinder = mock(Function.class);
-        when(authFinder.apply(any(AuthenticationDTO.class))).thenReturn(Optional.of(trainee));
+        Function<String, Optional<Trainee>> entityFinder = mock(Function.class);
+        when(entityFinder.apply(username)).thenReturn(Optional.of(trainee));
 
         @SuppressWarnings("unchecked")
         Function<Trainee, User> userGetter = mock(Function.class);
@@ -115,16 +136,18 @@ class UserServiceImplTest {
 
         @SuppressWarnings("unchecked")
         Consumer<Trainee> saver = mock(Consumer.class);
+        when(passwordEncoder.matches(oldPassword, "encoded-old-password")).thenReturn(true);
+        when(passwordEncoder.encode(newPassword)).thenReturn("encoded-new-password");
 
         // Act
-        userService.changePassword(username, oldPassword, newPassword, authFinder, userGetter, saver, "trainee");
+        userService.changePassword(username, oldPassword, newPassword, entityFinder, userGetter, saver, "trainee");
 
         // Assert
-        assertEquals(newPassword, user.getPassword());
+        assertEquals("encoded-new-password", user.getPassword());
         verify(validationUtil).validateNotBlank(username, "Username");
         verify(validationUtil).validateNotBlank(oldPassword, "Old password");
         verify(validationUtil).validateNotBlank(newPassword, "New password");
-        verify(authFinder).apply(any(AuthenticationDTO.class));
+        verify(entityFinder).apply(username);
         verify(userGetter).apply(trainee);
         verify(saver).accept(trainee);
     }
@@ -137,8 +160,8 @@ class UserServiceImplTest {
         String newPassword = "newPassword";
 
         @SuppressWarnings("unchecked")
-        Function<AuthenticationDTO, Optional<Trainee>> authFinder = mock(Function.class);
-        when(authFinder.apply(any(AuthenticationDTO.class))).thenReturn(Optional.empty());
+        Function<String, Optional<Trainee>> entityFinder = mock(Function.class);
+        when(entityFinder.apply(username)).thenReturn(Optional.empty());
 
         @SuppressWarnings("unchecked")
         Function<Trainee, User> userGetter = mock(Function.class);
@@ -148,7 +171,7 @@ class UserServiceImplTest {
 
         // Act & Assert
         AuthenticationException exception = assertThrows(AuthenticationException.class,
-                () -> userService.changePassword(username, oldPassword, newPassword, authFinder, userGetter, saver,
+            () -> userService.changePassword(username, oldPassword, newPassword, entityFinder, userGetter, saver,
                         "trainee"));
 
         assertEquals("Invalid username or old password does not match", exception.getMessage());

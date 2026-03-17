@@ -1,12 +1,14 @@
 package com.epam.springCoreTask.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.epam.springCoreTask.dto.AuthenticationDTO;
 import com.epam.springCoreTask.exception.AuthenticationException;
 import com.epam.springCoreTask.exception.EntityNotFoundException;
 import com.epam.springCoreTask.exception.ValidationException;
@@ -25,26 +27,40 @@ public class UserServiceImpl implements UserService {
 
         private final ValidationUtil validationUtil;
         private final UserRepository userRepository;
+        private final PasswordEncoder passwordEncoder;
+
+        @Value("${app.security.login.max-attempts:3}")
+        private int maxLoginAttempts;
+
+        @Value("${app.security.login.lock-minutes:5}")
+        private int lockMinutes;
 
         @Override
         public <T> T authenticate(String username, String password,
-                        Function<AuthenticationDTO, Optional<T>> repositoryFinder,
+                                Function<String, Optional<T>> entityFinder,
+                                Function<T, User> userGetter,
                         String entityType) {
                 log.debug("Authenticating {}: username={}", entityType, username);
 
                 validationUtil.validateNotBlank(username, "Username");
                 validationUtil.validateNotBlank(password, "Password");
 
-                AuthenticationDTO auth = AuthenticationDTO.builder()
-                                .username(username)
-                                .password(password)
-                                .build();
-
-                T entity = repositoryFinder.apply(auth)
+                                T entity = entityFinder.apply(username)
                                 .orElseThrow(() -> {
                                         log.warn("Authentication failed for {}: username={}", entityType, username);
                                         return new AuthenticationException("Invalid username or password");
                                 });
+
+                                User user = userGetter.apply(entity);
+                                validateAccountEligibility(user);
+
+                                if (!passwordEncoder.matches(password, user.getPassword())) {
+                                        registerFailedAttempt(user);
+                                        log.warn("Authentication failed for {}: username={}", entityType, username);
+                                        throw new AuthenticationException("Invalid username or password");
+                                }
+
+                                resetFailedAttempts(user);
 
                 log.info("{} authenticated successfully: username={}",
                                 entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
@@ -53,7 +69,7 @@ public class UserServiceImpl implements UserService {
 
         @Override
         public <T> void changePassword(String username, String oldPassword, String newPassword,
-                        Function<AuthenticationDTO, Optional<T>> authFinder,
+                                Function<String, Optional<T>> entityFinder,
                         Function<T, User> userGetter,
                         Consumer<T> saver,
                         String entityType) {
@@ -63,21 +79,21 @@ public class UserServiceImpl implements UserService {
                 validationUtil.validateNotBlank(oldPassword, "Old password");
                 validationUtil.validateNotBlank(newPassword, "New password");
 
-                AuthenticationDTO auth = AuthenticationDTO.builder()
-                                .username(username)
-                                .password(oldPassword)
-                                .build();
-
-                T entity = authFinder.apply(auth)
+                                T entity = entityFinder.apply(username)
                                 .orElseThrow(() -> {
                                         log.warn("Password change failed - invalid credentials for {}: username={}",
                                                         entityType, username);
-                                        return new AuthenticationException(
-                                                        "Invalid username or old password does not match");
+                                                                return new AuthenticationException("Invalid username or old password does not match");
                                 });
 
                 User user = userGetter.apply(entity);
-                user.setPassword(newPassword);
+                                validateAccountEligibility(user);
+
+                                if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+                                        throw new AuthenticationException("Invalid username or old password does not match");
+                                }
+
+                                user.setPassword(passwordEncoder.encode(newPassword));
                 saver.accept(entity);
 
                 log.info("Password changed successfully for {}: username={}", entityType, username);
@@ -142,11 +158,21 @@ public class UserServiceImpl implements UserService {
                 validationUtil.validateNotBlank(username, "Username");
                 validationUtil.validateNotBlank(password, "Password");
 
-                User user = userRepository.findByUsernameAndPassword(username, password)
+				User user = userRepository.findByUsername(username)
                                 .orElseThrow(() -> {
                                         log.warn("Authentication failed for user: username={}", username);
                                         return new AuthenticationException("Invalid username or password");
                                 });
+
+				validateAccountEligibility(user);
+
+				if (!passwordEncoder.matches(password, user.getPassword())) {
+					registerFailedAttempt(user);
+					log.warn("Authentication failed for user: username={}", username);
+					throw new AuthenticationException("Invalid username or password");
+				}
+
+				resetFailedAttempts(user);
 
                 log.info("User authenticated successfully: username={}", username);
                 return user;
@@ -160,32 +186,86 @@ public class UserServiceImpl implements UserService {
                 validationUtil.validateNotBlank(oldPassword, "Old password");
                 validationUtil.validateNotBlank(newPassword, "New password");
 
-                User user = userRepository.findByUsernameAndPassword(username, oldPassword)
-                                .orElseThrow(() -> {
-                                        log.warn("Password change failed - invalid credentials for user: username={}",
-                                                        username);
-                                        return new AuthenticationException(
-                                                        "Invalid username or old password does not match");
-                                });
+                                User user = getUserByUsername(username);
+                                validateAccountEligibility(user);
 
-                user.setPassword(newPassword);
-                userRepository.save(user);
+                                if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+                                        log.warn("Password change failed - invalid credentials for user: username={}", username);
+                                        throw new AuthenticationException("Invalid username or old password does not match");
+                                }
 
-                log.info("Password changed successfully for user: username={}", username);
-        }
+                                user.setPassword(passwordEncoder.encode(newPassword));
+                                resetFailedAttempts(user);
+                                userRepository.save(user);
 
-        @Override
-        public void setActiveStatus(String username, boolean isActive) {
-                log.debug("Setting active status for user: username={}, isActive={}", username, isActive);
+                                log.info("Password changed successfully for user: username={}", username);
+                }
 
-                validationUtil.validateNotBlank(username, "Username");
+                @Override
+                public void setActiveStatus(String username, boolean isActive) {
+                        log.debug("Setting active status for user: username={}, isActive={}", username, isActive);
 
-                User user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+                        validationUtil.validateNotBlank(username, "Username");
 
-                user.setActive(isActive);
-                userRepository.save(user);
+                        User user = getUserByUsername(username);
+                        user.setActive(isActive);
+                        userRepository.save(user);
 
-                log.info("Active status set to {} for user: username={}", isActive, username);
-        }
+                        log.info("Active status set to {} for user: username={}", isActive, username);
+                }
+
+                @Override
+                public User getUserByUsername(String username) {
+                        validationUtil.validateNotBlank(username, "Username");
+                        return userRepository.findByUsername(username)
+                                        .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+                }
+
+                private void validateAccountEligibility(User user) {
+                        if (!user.isActive()) {
+                                throw new AuthenticationException("User account is inactive");
+                        }
+
+                        if (isAccountLocked(user)) {
+                                throw new AuthenticationException("User is blocked until " + user.getAccountLockedUntil());
+                        }
+                }
+
+                private boolean isAccountLocked(User user) {
+                        LocalDateTime accountLockedUntil = user.getAccountLockedUntil();
+                        if (accountLockedUntil == null) {
+                                return false;
+                        }
+
+                        if (accountLockedUntil.isAfter(LocalDateTime.now())) {
+                                return true;
+                        }
+
+                        user.setAccountLockedUntil(null);
+                        user.setFailedLoginAttempts(0);
+                        userRepository.save(user);
+                        return false;
+                }
+
+                private void registerFailedAttempt(User user) {
+                        int nextAttempts = user.getFailedLoginAttempts() + 1;
+                        user.setFailedLoginAttempts(nextAttempts);
+
+                        if (nextAttempts >= maxLoginAttempts) {
+                                user.setFailedLoginAttempts(0);
+                                user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(lockMinutes));
+                        }
+
+                        userRepository.save(user);
+                }
+
+                private void resetFailedAttempts(User user) {
+                        if (user.getFailedLoginAttempts() == 0 && user.getAccountLockedUntil() == null) {
+                                return;
+                        }
+
+                        user.setFailedLoginAttempts(0);
+                        user.setAccountLockedUntil(null);
+                        userRepository.save(user);
+                }
 }

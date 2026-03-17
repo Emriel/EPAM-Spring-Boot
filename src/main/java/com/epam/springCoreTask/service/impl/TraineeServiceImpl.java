@@ -3,6 +3,7 @@ package com.epam.springCoreTask.service.impl;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.epam.springCoreTask.exception.DuplicateAssignmentException;
@@ -30,6 +31,7 @@ public class TraineeServiceImpl implements TraineeService {
     private final TrainerRepository trainerRepository;
     private final UsernameGenerator usernameGenerator;
     private final PasswordGenerator passwordGenerator;
+    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
     private final ValidationUtil validationUtil;
 
@@ -55,8 +57,10 @@ public class TraineeServiceImpl implements TraineeService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setUsername(username);
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(password));
         user.setActive(true);
+        user.setFailedLoginAttempts(0);
+        user.setPlainPassword(password);
 
         Trainee trainee = new Trainee();
         trainee.setUser(user);
@@ -125,12 +129,13 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Trainee authenticateTrainee(String username, String password) {
         return userService.authenticate(
                 username,
                 password,
-                traineeRepository::findByUsernameAndPassword,
+				traineeRepository::findByUser_Username,
+				Trainee::getUser,
                 "trainee");
     }
 
@@ -150,7 +155,7 @@ public class TraineeServiceImpl implements TraineeService {
                 username,
                 oldPassword,
                 newPassword,
-                traineeRepository::findByUsernameAndPassword,
+				traineeRepository::findByUser_Username,
                 Trainee::getUser,
                 traineeRepository::save,
                 "trainee");
