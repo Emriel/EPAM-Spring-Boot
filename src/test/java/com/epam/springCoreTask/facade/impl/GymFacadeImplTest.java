@@ -223,7 +223,7 @@ class GymFacadeImplTest {
     @Test
     void testUpdateTraineeProfile() {
         // Arrange
-        TraineeUpdateRequest request = new TraineeUpdateRequest("john.doe", "John Updated",
+        TraineeUpdateRequest request = new TraineeUpdateRequest("John Updated",
                 "Doe", LocalDate.of(1990, 1, 1), "456 New St", true);
 
         when(traineeService.getTraineeByUsername("john.doe")).thenReturn(testTrainee);
@@ -231,7 +231,7 @@ class GymFacadeImplTest {
         when(traineeMapper.toProfileResponse(testTrainee)).thenReturn(traineeProfileResponse);
 
         // Act
-        TraineeProfileResponse result = gymFacade.updateTraineeProfile(request);
+        TraineeProfileResponse result = gymFacade.updateTraineeProfile("john.doe", request);
 
         // Assert
         assertNotNull(result);
@@ -245,7 +245,7 @@ class GymFacadeImplTest {
     @Test
     void testUpdateTrainerProfile() {
         // Arrange
-        TrainerUpdateRequest request = new TrainerUpdateRequest("jane.smith", "Jane Updated",
+        TrainerUpdateRequest request = new TrainerUpdateRequest("Jane Updated",
                 "Smith", "Yoga", true);
 
         when(trainerService.getTrainerByUsername("jane.smith")).thenReturn(testTrainer);
@@ -254,7 +254,7 @@ class GymFacadeImplTest {
         when(trainerMapper.toProfileResponse(testTrainer)).thenReturn(trainerProfileResponse);
 
         // Act
-        TrainerProfileResponse result = gymFacade.updateTrainerProfile(request);
+        TrainerProfileResponse result = gymFacade.updateTrainerProfile("jane.smith", request);
 
         // Assert
         assertNotNull(result);

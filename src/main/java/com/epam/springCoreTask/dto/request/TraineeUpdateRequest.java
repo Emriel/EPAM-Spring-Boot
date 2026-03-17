@@ -16,10 +16,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Trainee profile update request")
 public class TraineeUpdateRequest {
 
-    @NotBlank(message = "Username is required")
-    @Schema(description = "Username", example = "john.doe")
-    private String username;
-
     @NotBlank(message = "First name is required")
     @Schema(description = "First name", example = "John")
     private String firstName;

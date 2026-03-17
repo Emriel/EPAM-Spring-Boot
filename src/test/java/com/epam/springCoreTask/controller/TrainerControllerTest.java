@@ -133,11 +133,10 @@ class TrainerControllerTest {
 
     @Test
     void testUpdateTrainerProfile_Success() throws Exception {
-        when(gymFacade.updateTrainerProfile(any(TrainerUpdateRequest.class)))
+        when(gymFacade.updateTrainerProfile(anyString(), any(TrainerUpdateRequest.class)))
                 .thenReturn(trainerProfileResponse);
 
         String requestBody = "{\n" +
-                "  \"username\": \"jane.smith\",\n" +
                 "  \"firstName\": \"Jane\",\n" +
                 "  \"lastName\": \"Smith\",\n" +
                 "  \"specialization\": \"Yoga\",\n" +
@@ -152,7 +151,7 @@ class TrainerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("jane.smith"));
 
-        verify(gymFacade).updateTrainerProfile(any(TrainerUpdateRequest.class));
+        verify(gymFacade).updateTrainerProfile(anyString(), any(TrainerUpdateRequest.class));
     }
 
     @Test
@@ -160,7 +159,6 @@ class TrainerControllerTest {
         doNothing().when(gymFacade).changeTrainerStatus("jane.smith", true);
 
         String requestBody = "{\n" +
-                "  \"username\": \"jane.smith\",\n" +
                 "  \"isActive\": true\n" +
                 "}";
 
@@ -179,7 +177,6 @@ class TrainerControllerTest {
         doNothing().when(gymFacade).changeTrainerStatus("jane.smith", false);
 
         String requestBody = "{\n" +
-                "  \"username\": \"jane.smith\",\n" +
                 "  \"isActive\": false\n" +
                 "}";
 

@@ -98,10 +98,10 @@ public class GymFacadeImpl implements GymFacade {
     }
 
     @Override
-    public TraineeProfileResponse updateTraineeProfile(TraineeUpdateRequest request) {
-        log.info("Updating trainee profile through facade: {}", request.getUsername());
+    public TraineeProfileResponse updateTraineeProfile(String username, TraineeUpdateRequest request) {
+        log.info("Updating trainee profile through facade: {}", username);
         
-        Trainee trainee = traineeService.getTraineeByUsername(request.getUsername());
+        Trainee trainee = traineeService.getTraineeByUsername(username);
         traineeMapper.updateTraineeFromRequest(request, trainee);
         
         Trainee updatedTrainee = traineeService.updateTrainee(trainee);
@@ -109,10 +109,10 @@ public class GymFacadeImpl implements GymFacade {
     }
 
     @Override
-    public TrainerProfileResponse updateTrainerProfile(TrainerUpdateRequest request) {
-        log.info("Updating trainer profile through facade: {}", request.getUsername());
+    public TrainerProfileResponse updateTrainerProfile(String username, TrainerUpdateRequest request) {
+        log.info("Updating trainer profile through facade: {}", username);
         
-        Trainer trainer = trainerService.getTrainerByUsername(request.getUsername());
+        Trainer trainer = trainerService.getTrainerByUsername(username);
         trainerMapper.updateTrainerFromRequest(request, trainer);
         
         TrainingType trainingType = trainingTypeRepository.findByName(request.getSpecialization())

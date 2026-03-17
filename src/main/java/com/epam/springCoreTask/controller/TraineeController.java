@@ -99,9 +99,7 @@ public class TraineeController {
             @Valid @RequestBody TraineeUpdateRequest request) {
         log.info("Updating profile for trainee: {}", username);
         
-        // Override username from path variable
-        request.setUsername(username);
-        TraineeProfileResponse response = gymFacade.updateTraineeProfile(request);
+        TraineeProfileResponse response = gymFacade.updateTraineeProfile(username, request);
         
         log.info("Profile updated for trainee: {}", username);
         return ResponseEntity.ok(response);

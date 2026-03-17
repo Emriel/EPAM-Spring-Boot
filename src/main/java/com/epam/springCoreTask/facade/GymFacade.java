@@ -24,9 +24,9 @@ public interface GymFacade {
 
         void createTrainingSession(TrainingRequest request);
 
-        TraineeProfileResponse updateTraineeProfile(TraineeUpdateRequest request);
+        TraineeProfileResponse updateTraineeProfile(String username, TraineeUpdateRequest request);
 
-        TrainerProfileResponse updateTrainerProfile(TrainerUpdateRequest request);
+        TrainerProfileResponse updateTrainerProfile(String username, TrainerUpdateRequest request);
 
         TraineeProfileResponse getTraineeByUsername(String username);
 
