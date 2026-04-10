@@ -35,9 +35,9 @@ import com.epam.springCoreTask.dto.response.TrainingResponse;
 import com.epam.springCoreTask.exception.EntityNotFoundException;
 import com.epam.springCoreTask.facade.GymFacade;
 import com.epam.springCoreTask.security.GymUserDetailsService;
-import com.epam.springCoreTask.security.JwtAuthenticationFilter;
-import com.epam.springCoreTask.security.JwtService;
-import com.epam.springCoreTask.security.TokenBlacklistService;
+import com.epam.springCoreTask.security.jwt.JwtAuthenticationFilter;
+import com.epam.springCoreTask.security.jwt.JwtService;
+import com.epam.springCoreTask.security.jwt.JwtTokenBlacklistService;
 
 @WebMvcTest(TrainerController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -53,7 +53,7 @@ class TrainerControllerTest {
         private JwtService jwtService;
 
         @MockBean
-        private TokenBlacklistService tokenBlacklistService;
+        private JwtTokenBlacklistService tokenBlacklistService;
 
         @MockBean
         private JwtAuthenticationFilter jwtAuthenticationFilter;

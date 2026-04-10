@@ -15,11 +15,10 @@ import com.epam.springCoreTask.dto.request.LoginRequest;
 import com.epam.springCoreTask.dto.response.LoginResponse;
 import com.epam.springCoreTask.facade.GymFacade;
 import com.epam.springCoreTask.model.User;
-import com.epam.springCoreTask.security.JwtService;
-import com.epam.springCoreTask.security.TokenBlacklistService;
+import com.epam.springCoreTask.security.jwt.JwtService;
+import com.epam.springCoreTask.security.jwt.JwtTokenBlacklistService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,7 +39,7 @@ public class AuthController {
 
     private final GymFacade gymFacade;
     private final JwtService jwtService;
-    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtTokenBlacklistService tokenBlacklistService;
 
     @Operation(summary = "User login", description = "Authenticate user with username and password")
     @ApiResponses(value = {

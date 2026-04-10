@@ -1,4 +1,4 @@
-package com.epam.springCoreTask.security;
+package com.epam.springCoreTask.security.jwt.impl;
 
 import java.util.Date;
 import java.util.Map;
@@ -6,8 +6,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
 
+import com.epam.springCoreTask.security.jwt.JwtTokenBlacklistService;
+
 @Service
-public class TokenBlacklistService {
+public class JwtTokenBlacklistServiceImpl implements JwtTokenBlacklistService {
 
     private final Map<String, Date> blacklistedTokens = new ConcurrentHashMap<>();
 

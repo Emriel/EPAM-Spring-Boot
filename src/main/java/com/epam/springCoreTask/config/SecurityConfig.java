@@ -1,4 +1,4 @@
-package com.epam.springCoreTask.security;
+package com.epam.springCoreTask.config;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -25,6 +25,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.epam.springCoreTask.security.GymUserDetailsService;
+import com.epam.springCoreTask.security.jwt.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletResponse;

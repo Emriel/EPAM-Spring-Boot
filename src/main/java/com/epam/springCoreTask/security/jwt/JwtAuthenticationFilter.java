@@ -1,4 +1,4 @@
-package com.epam.springCoreTask.security;
+package com.epam.springCoreTask.security.jwt;
 
 import java.io.IOException;
 
@@ -9,6 +9,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.epam.springCoreTask.security.GymUserDetailsService;
+import com.epam.springCoreTask.security.jwt.impl.JwtServiceImpl;
+import com.epam.springCoreTask.security.jwt.impl.JwtTokenBlacklistServiceImpl;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -21,9 +25,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final JwtServiceImpl jwtService;
     private final GymUserDetailsService userDetailsService;
-    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtTokenBlacklistServiceImpl tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

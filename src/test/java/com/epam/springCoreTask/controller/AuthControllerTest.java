@@ -23,12 +23,12 @@ import com.epam.springCoreTask.config.LoggingInterceptor;
 import com.epam.springCoreTask.exception.AuthenticationException;
 import com.epam.springCoreTask.facade.GymFacade;
 import com.epam.springCoreTask.security.GymUserDetailsService;
-import com.epam.springCoreTask.security.JwtAuthenticationFilter;
+import com.epam.springCoreTask.security.jwt.JwtAuthenticationFilter;
+import com.epam.springCoreTask.security.jwt.JwtService;
+import com.epam.springCoreTask.security.jwt.JwtTokenBlacklistService;
 import com.epam.springCoreTask.model.Trainee;
 import com.epam.springCoreTask.model.Trainer;
 import com.epam.springCoreTask.model.User;
-import com.epam.springCoreTask.security.JwtService;
-import com.epam.springCoreTask.security.TokenBlacklistService;
 
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -44,7 +44,7 @@ class AuthControllerTest {
         private JwtService jwtService;
 
         @MockBean
-        private TokenBlacklistService tokenBlacklistService;
+        private JwtTokenBlacklistService tokenBlacklistService;
 
         @MockBean
         private JwtAuthenticationFilter jwtAuthenticationFilter;

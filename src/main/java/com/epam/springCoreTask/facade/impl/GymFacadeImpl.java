@@ -25,12 +25,12 @@ import com.epam.springCoreTask.model.Training;
 import com.epam.springCoreTask.model.TrainingType;
 import com.epam.springCoreTask.model.User;
 import com.epam.springCoreTask.repository.TrainingTypeRepository;
+import com.epam.springCoreTask.security.jwt.JwtService;
 import com.epam.springCoreTask.service.TraineeService;
 import com.epam.springCoreTask.service.TrainerService;
 import com.epam.springCoreTask.service.TrainingService;
 import com.epam.springCoreTask.service.UserService;
 import com.epam.springCoreTask.monitoring.GymMetricsService;
-import com.epam.springCoreTask.security.JwtService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
