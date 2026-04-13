@@ -122,8 +122,8 @@ public class TrainerServiceImpl implements TrainerService {
         return userService.authenticate(
                 username,
                 password,
-				trainerRepository::findByUser_Username,
-				Trainer::getUser,
+                trainerRepository::findByUser_Username,
+                Trainer::getUser,
                 "trainer");
     }
 
@@ -143,7 +143,7 @@ public class TrainerServiceImpl implements TrainerService {
                 username,
                 oldPassword,
                 newPassword,
-				trainerRepository::findByUser_Username,
+                trainerRepository::findByUser_Username,
                 Trainer::getUser,
                 trainerRepository::save,
                 "trainer");

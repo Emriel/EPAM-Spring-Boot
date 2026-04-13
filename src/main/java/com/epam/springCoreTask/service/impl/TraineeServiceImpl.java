@@ -134,8 +134,8 @@ public class TraineeServiceImpl implements TraineeService {
         return userService.authenticate(
                 username,
                 password,
-				traineeRepository::findByUser_Username,
-				Trainee::getUser,
+                traineeRepository::findByUser_Username,
+                Trainee::getUser,
                 "trainee");
     }
 
@@ -155,7 +155,7 @@ public class TraineeServiceImpl implements TraineeService {
                 username,
                 oldPassword,
                 newPassword,
-				traineeRepository::findByUser_Username,
+                traineeRepository::findByUser_Username,
                 Trainee::getUser,
                 traineeRepository::save,
                 "trainee");

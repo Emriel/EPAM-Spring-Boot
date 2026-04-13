@@ -25,247 +25,246 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-        private final ValidationUtil validationUtil;
-        private final UserRepository userRepository;
-        private final PasswordEncoder passwordEncoder;
+    private final ValidationUtil validationUtil;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-        @Value("${app.security.login.max-attempts:3}")
-        private int maxLoginAttempts;
+    @Value("${app.security.login.max-attempts:3}")
+    private int maxLoginAttempts;
 
-        @Value("${app.security.login.lock-minutes:5}")
-        private int lockMinutes;
+    @Value("${app.security.login.lock-minutes:5}")
+    private int lockMinutes;
 
-        @Override
-        public <T> T authenticate(String username, String password,
-                                Function<String, Optional<T>> entityFinder,
-                                Function<T, User> userGetter,
-                        String entityType) {
-                log.debug("Authenticating {}: username={}", entityType, username);
+    @Override
+    public <T> T authenticate(String username, String password,
+            Function<String, Optional<T>> entityFinder,
+            Function<T, User> userGetter, String entityType) {
+        log.debug("Authenticating {}: username={}", entityType, username);
 
-                validationUtil.validateNotBlank(username, "Username");
-                validationUtil.validateNotBlank(password, "Password");
+        validationUtil.validateNotBlank(username, "Username");
+        validationUtil.validateNotBlank(password, "Password");
 
-                                T entity = entityFinder.apply(username)
-                                .orElseThrow(() -> {
-                                        log.warn("Authentication failed for {}: username={}", entityType, username);
-                                        return new AuthenticationException("Invalid username or password");
-                                });
+        T entity = entityFinder.apply(username)
+                .orElseThrow(() -> {
+                    log.warn("Authentication failed for {}: username={}", entityType, username);
+                    return new AuthenticationException("Invalid username or password");
+                });
 
-                                User user = userGetter.apply(entity);
-                                validateAccountEligibility(user);
+        User user = userGetter.apply(entity);
+        validateAccountEligibility(user);
 
-                                if (!passwordEncoder.matches(password, user.getPassword())) {
-                                        registerFailedAttempt(user);
-                                        log.warn("Authentication failed for {}: username={}", entityType, username);
-                                        throw new AuthenticationException("Invalid username or password");
-                                }
-
-                                resetFailedAttempts(user);
-
-                log.info("{} authenticated successfully: username={}",
-                                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
-                return entity;
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            registerFailedAttempt(user);
+            log.warn("Authentication failed for {}: username={}", entityType, username);
+            throw new AuthenticationException("Invalid username or password");
         }
 
-        @Override
-        public <T> void changePassword(String username, String oldPassword, String newPassword,
-                                Function<String, Optional<T>> entityFinder,
-                        Function<T, User> userGetter,
-                        Consumer<T> saver,
-                        String entityType) {
-                log.debug("Changing password for {}: username={}", entityType, username);
+        resetFailedAttempts(user);
 
-                validationUtil.validateNotBlank(username, "Username");
-                validationUtil.validateNotBlank(oldPassword, "Old password");
-                validationUtil.validateNotBlank(newPassword, "New password");
+        log.info("{} authenticated successfully: username={}",
+                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
+        return entity;
+    }
 
-                                T entity = entityFinder.apply(username)
-                                .orElseThrow(() -> {
-                                        log.warn("Password change failed - invalid credentials for {}: username={}",
-                                                        entityType, username);
-                                                                return new AuthenticationException("Invalid username or old password does not match");
-                                });
+    @Override
+    public <T> void changePassword(String username, String oldPassword, String newPassword,
+            Function<String, Optional<T>> entityFinder,
+            Function<T, User> userGetter,
+            Consumer<T> saver,
+            String entityType) {
+        log.debug("Changing password for {}: username={}", entityType, username);
 
-                User user = userGetter.apply(entity);
-                                validateAccountEligibility(user);
+        validationUtil.validateNotBlank(username, "Username");
+        validationUtil.validateNotBlank(oldPassword, "Old password");
+        validationUtil.validateNotBlank(newPassword, "New password");
 
-                                if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-                                        throw new AuthenticationException("Invalid username or old password does not match");
-                                }
+        T entity = entityFinder.apply(username)
+                .orElseThrow(() -> {
+                    log.warn("Password change failed - invalid credentials for {}: username={}",
+                            entityType, username);
+                    return new AuthenticationException("Invalid username or old password does not match");
+                });
 
-                                user.setPassword(passwordEncoder.encode(newPassword));
-                saver.accept(entity);
+        User user = userGetter.apply(entity);
+        validateAccountEligibility(user);
 
-                log.info("Password changed successfully for {}: username={}", entityType, username);
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new AuthenticationException("Invalid username or old password does not match");
         }
 
-        @Override
-        public <T> void activateEntity(String username,
-                        Function<String, T> entityGetter,
-                        Function<T, User> userGetter,
-                        Consumer<T> saver,
-                        String entityType) {
-                log.debug("Activating {}: username={}", entityType, username);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        saver.accept(entity);
 
-                validationUtil.validateNotBlank(username, "Username");
+        log.info("Password changed successfully for {}: username={}", entityType, username);
+    }
 
-                T entity = entityGetter.apply(username);
-                User user = userGetter.apply(entity);
-                
-                if (user.isActive()) {
-                        log.warn("{} is already active: username={}", entityType, username);
-                        throw new ValidationException(
-                                        entityType.substring(0, 1).toUpperCase() + entityType.substring(1) + " is already active");
-                }
-                
-                user.setActive(true);
-                saver.accept(entity);
+    @Override
+    public <T> void activateEntity(String username,
+            Function<String, T> entityGetter,
+            Function<T, User> userGetter,
+            Consumer<T> saver,
+            String entityType) {
+        log.debug("Activating {}: username={}", entityType, username);
 
-                log.info("{} activated successfully: username={}",
-                                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
+        validationUtil.validateNotBlank(username, "Username");
+
+        T entity = entityGetter.apply(username);
+        User user = userGetter.apply(entity);
+
+        if (user.isActive()) {
+            log.warn("{} is already active: username={}", entityType, username);
+            throw new ValidationException(
+                    entityType.substring(0, 1).toUpperCase() + entityType.substring(1) + " is already active");
         }
 
-        @Override
-        public <T> void deactivateEntity(String username,
-                        Function<String, T> entityGetter,
-                        Function<T, User> userGetter,
-                        Consumer<T> saver,
-                        String entityType) {
-                log.debug("Deactivating {}: username={}", entityType, username);
+        user.setActive(true);
+        saver.accept(entity);
 
-                validationUtil.validateNotBlank(username, "Username");
+        log.info("{} activated successfully: username={}",
+                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
+    }
 
-                T entity = entityGetter.apply(username);
-                User user = userGetter.apply(entity);
-                
-                if (!user.isActive()) {
-                        log.warn("{} is already inactive: username={}", entityType, username);
-                        throw new ValidationException(
-                                        entityType.substring(0, 1).toUpperCase() + entityType.substring(1) + " is already inactive");
-                }
-                
-                user.setActive(false);
-                saver.accept(entity);
+    @Override
+    public <T> void deactivateEntity(String username,
+            Function<String, T> entityGetter,
+            Function<T, User> userGetter,
+            Consumer<T> saver,
+            String entityType) {
+        log.debug("Deactivating {}: username={}", entityType, username);
 
-                log.info("{} deactivated successfully: username={}",
-                                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
+        validationUtil.validateNotBlank(username, "Username");
+
+        T entity = entityGetter.apply(username);
+        User user = userGetter.apply(entity);
+
+        if (!user.isActive()) {
+            log.warn("{} is already inactive: username={}", entityType, username);
+            throw new ValidationException(
+                    entityType.substring(0, 1).toUpperCase() + entityType.substring(1) + " is already inactive");
         }
 
-        @Override
-        public User authenticateUser(String username, String password) {
-                log.debug("Authenticating user: username={}", username);
+        user.setActive(false);
+        saver.accept(entity);
 
-                validationUtil.validateNotBlank(username, "Username");
-                validationUtil.validateNotBlank(password, "Password");
+        log.info("{} deactivated successfully: username={}",
+                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), username);
+    }
 
-				User user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> {
-                                        log.warn("Authentication failed for user: username={}", username);
-                                        return new AuthenticationException("Invalid username or password");
-                                });
+    @Override
+    public User authenticateUser(String username, String password) {
+        log.debug("Authenticating user: username={}", username);
 
-				validateAccountEligibility(user);
+        validationUtil.validateNotBlank(username, "Username");
+        validationUtil.validateNotBlank(password, "Password");
 
-				if (!passwordEncoder.matches(password, user.getPassword())) {
-					registerFailedAttempt(user);
-					log.warn("Authentication failed for user: username={}", username);
-					throw new AuthenticationException("Invalid username or password");
-				}
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.warn("Authentication failed for user: username={}", username);
+                    return new AuthenticationException("Invalid username or password");
+                });
 
-				resetFailedAttempts(user);
+        validateAccountEligibility(user);
 
-                log.info("User authenticated successfully: username={}", username);
-                return user;
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            registerFailedAttempt(user);
+            log.warn("Authentication failed for user: username={}", username);
+            throw new AuthenticationException("Invalid username or password");
         }
 
-        @Override
-        public void changeUserPassword(String username, String oldPassword, String newPassword) {
-                log.debug("Changing password for user: username={}", username);
+        resetFailedAttempts(user);
 
-                validationUtil.validateNotBlank(username, "Username");
-                validationUtil.validateNotBlank(oldPassword, "Old password");
-                validationUtil.validateNotBlank(newPassword, "New password");
+        log.info("User authenticated successfully: username={}", username);
+        return user;
+    }
 
-                                User user = getUserByUsername(username);
-                                validateAccountEligibility(user);
+    @Override
+    public void changeUserPassword(String username, String oldPassword, String newPassword) {
+        log.debug("Changing password for user: username={}", username);
 
-                                if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-                                        log.warn("Password change failed - invalid credentials for user: username={}", username);
-                                        throw new AuthenticationException("Invalid username or old password does not match");
-                                }
+        validationUtil.validateNotBlank(username, "Username");
+        validationUtil.validateNotBlank(oldPassword, "Old password");
+        validationUtil.validateNotBlank(newPassword, "New password");
 
-                                user.setPassword(passwordEncoder.encode(newPassword));
-                                resetFailedAttempts(user);
-                                userRepository.save(user);
+        User user = getUserByUsername(username);
+        validateAccountEligibility(user);
 
-                                log.info("Password changed successfully for user: username={}", username);
-                }
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            log.warn("Password change failed - invalid credentials for user: username={}", username);
+            throw new AuthenticationException("Invalid username or old password does not match");
+        }
 
-                @Override
-                public void setActiveStatus(String username, boolean isActive) {
-                        log.debug("Setting active status for user: username={}, isActive={}", username, isActive);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        resetFailedAttempts(user);
+        userRepository.save(user);
 
-                        validationUtil.validateNotBlank(username, "Username");
+        log.info("Password changed successfully for user: username={}", username);
+    }
 
-                        User user = getUserByUsername(username);
-                        user.setActive(isActive);
-                        userRepository.save(user);
+    @Override
+    public void setActiveStatus(String username, boolean isActive) {
+        log.debug("Setting active status for user: username={}, isActive={}", username, isActive);
 
-                        log.info("Active status set to {} for user: username={}", isActive, username);
-                }
+        validationUtil.validateNotBlank(username, "Username");
 
-                @Override
-                public User getUserByUsername(String username) {
-                        validationUtil.validateNotBlank(username, "Username");
-                        return userRepository.findByUsername(username)
-                                        .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
-                }
+        User user = getUserByUsername(username);
+        user.setActive(isActive);
+        userRepository.save(user);
 
-                private void validateAccountEligibility(User user) {
-                        if (!user.isActive()) {
-                                throw new AuthenticationException("User account is inactive");
-                        }
+        log.info("Active status set to {} for user: username={}", isActive, username);
+    }
 
-                        if (isAccountLocked(user)) {
-                                throw new AuthenticationException("User is blocked until " + user.getAccountLockedUntil());
-                        }
-                }
+    @Override
+    public User getUserByUsername(String username) {
+        validationUtil.validateNotBlank(username, "Username");
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+    }
 
-                private boolean isAccountLocked(User user) {
-                        LocalDateTime accountLockedUntil = user.getAccountLockedUntil();
-                        if (accountLockedUntil == null) {
-                                return false;
-                        }
+    private void validateAccountEligibility(User user) {
+        if (!user.isActive()) {
+            throw new AuthenticationException("User account is inactive");
+        }
 
-                        if (accountLockedUntil.isAfter(LocalDateTime.now())) {
-                                return true;
-                        }
+        if (isAccountLocked(user)) {
+            throw new AuthenticationException("User is blocked until " + user.getAccountLockedUntil());
+        }
+    }
 
-                        user.setAccountLockedUntil(null);
-                        user.setFailedLoginAttempts(0);
-                        userRepository.save(user);
-                        return false;
-                }
+    private boolean isAccountLocked(User user) {
+        LocalDateTime accountLockedUntil = user.getAccountLockedUntil();
+        if (accountLockedUntil == null) {
+            return false;
+        }
 
-                private void registerFailedAttempt(User user) {
-                        int nextAttempts = user.getFailedLoginAttempts() + 1;
-                        user.setFailedLoginAttempts(nextAttempts);
+        if (accountLockedUntil.isAfter(LocalDateTime.now())) {
+            return true;
+        }
 
-                        if (nextAttempts >= maxLoginAttempts) {
-                                user.setFailedLoginAttempts(0);
-                                user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(lockMinutes));
-                        }
+        user.setAccountLockedUntil(null);
+        user.setFailedLoginAttempts(0);
+        userRepository.save(user);
+        return false;
+    }
 
-                        userRepository.save(user);
-                }
+    private void registerFailedAttempt(User user) {
+        int nextAttempts = user.getFailedLoginAttempts() + 1;
+        user.setFailedLoginAttempts(nextAttempts);
 
-                private void resetFailedAttempts(User user) {
-                        if (user.getFailedLoginAttempts() == 0 && user.getAccountLockedUntil() == null) {
-                                return;
-                        }
+        if (nextAttempts >= maxLoginAttempts) {
+            user.setFailedLoginAttempts(0);
+            user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(lockMinutes));
+        }
 
-                        user.setFailedLoginAttempts(0);
-                        user.setAccountLockedUntil(null);
-                        userRepository.save(user);
-                }
+        userRepository.save(user);
+    }
+
+    private void resetFailedAttempts(User user) {
+        if (user.getFailedLoginAttempts() == 0 && user.getAccountLockedUntil() == null) {
+            return;
+        }
+
+        user.setFailedLoginAttempts(0);
+        user.setAccountLockedUntil(null);
+        userRepository.save(user);
+    }
 }
